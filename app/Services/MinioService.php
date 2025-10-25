@@ -23,7 +23,7 @@ class MinioService extends BaseService
     public function upload(){
         $file = $this->request->file('upload_file');
         $extension = $file->getExtension(); //后缀名
-        $allowExtension = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'heic', 'heif', 'avif', 'jfif', 'tiff', 'tif'];
+        $allowExtension = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'ico', 'heic', 'heif', 'avif', 'jfif', 'tiff', 'tif', 'mp4'];
         if (!in_array($extension, $allowExtension)) {
             return $this->baseFailed('上传文件格式不正确',600);
         }
