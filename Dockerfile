@@ -1,5 +1,5 @@
 # Use base image with pre-installed composer dependencies
-FROM registry.zks.testing.icu/taoyangli/pc-base:latest
+FROM registry.zks.testing.icu/taoyangli/common-base:latest 
 
 # Copy application code
 COPY ./ /data/project

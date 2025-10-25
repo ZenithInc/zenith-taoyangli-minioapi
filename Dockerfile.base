@@ -1,0 +1,32 @@
+FROM registry.zks.testing.icu/taoyangli/hyperf:8.0-alpine-v3.15-swoole 
+
+RUN apk add tzdata && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+&& echo "Asia/Shanghai" > /etc/timezone \
+&& apk del tzdata
+
+# update
+RUN set -ex \
+    && apk update \
+    && cd /etc/php8 \
+    # - config PHP
+    && { \
+        echo "upload_max_filesize=128M"; \
+        echo "post_max_size=128M"; \
+        echo "memory_limit=1024M"; \
+        echo "date.timezone=Asia/Shanghai"; \
+    } | tee conf.d/php8-overrides.ini \
+    # ---------- clear works ----------
+    && rm -rf /var/cache/apk/* /tmp/* /usr/share/man \
+    && echo -e "\033[42;37m Build Completed :).\033[0m\n"
+
+WORKDIR /data/project
+
+# Copy only dependency files for composer install
+COPY composer.json composer.lock ./
+
+# Install dependencies without dev packages
+RUN composer install --no-dev -o --no-scripts --no-autoloader \
+    && rm -rf /root/.composer
+
+# Generate optimized autoloader (will be regenerated in final image with actual code)
+RUN composer dump-autoload --no-dev -o
