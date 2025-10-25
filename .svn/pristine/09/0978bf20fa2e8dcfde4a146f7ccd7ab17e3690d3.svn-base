@@ -1,0 +1,8 @@
+<?php
+return array(
+    //minio server
+    'endpoint'  =>  'http://10.4.72.165:9000',
+    'key' => '68SKkuEH6YHIWWxyt43a',
+    'secret' => 'ynQrj3pcf40L9lgORcVIJDXIAJiJj1J9x08pbnUj',
+    'bucket' => 'taoyangli',
+);

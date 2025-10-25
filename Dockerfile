@@ -10,4 +10,3 @@ WORKDIR /data/project
 RUN composer dump-autoload --no-dev -o
 
 ENTRYPOINT ["php", "/data/project/bin/hyperf.php", "start"]
-

@@ -1,0 +1,127 @@
+<?php
+
+namespace App\Services;
+use App\Handlers\Minio\AwsHelper;
+use App\Services\BaseService;
+use Hyperf\DbConnection\Db;
+use Hyperf\Di\Annotation\Inject;
+use Aws\S3\Exception\S3Exception;
+use Hyperf\HttpServer\Contract\RequestInterface;
+
+class MinioService extends BaseService
+{
+    /**
+     * @Inject()
+     * @var RequestInterface
+     */
+    public $request;
+
+    /**
+     * 上传
+     * @return array
+     */
+    public function upload(){
+        $file = $this->request->file('upload_file');
+        $extension = $file->getExtension(); //后缀名
+        $size = $file->getSize(); //文件大小
+        $name= $file->getClientFilename(); //文件原名称
+        $infoArr = $file->getFileInfo();
+        $newFileName = time().mt_rand(1,10000).'_'.$name;
+        $path = 'public/'.$newFileName;
+        $file->moveTo($path);
+        try {
+            $aws = new AwsHelper();
+            $result = $aws->upLoadObject($path,$newFileName);
+            unlink($path);
+            if(!$result){
+                return $this->baseFailed('上传失败',600);
+            }
+            return $this->baseSucceed('上传成功',['url'=>$result['url'],'size'=>$size]);
+        } catch (S3Exception $e) {
+            unlink($path);
+            return $this->baseFailed('上传失败：'.$e->getAwsErrorMessage(),600);
+        }
+        //5.计算样本文件的md5值返回给前端
+//        $sampleApkMd5=md5_file($fullFileName);
+
+//        $frontRes=["sample_hash"=>$sampleApkMd5,"size"=>$infoArr['size']];
+
+//        var_dump($frontRes);die;
+    }
+
+    //下载样本接口(从minio下载)
+    public function download(){
+        if(empty($this->reqJsonArr["sample_hash"])){
+            throw new ValidateException('sample_hash不能为空');
+        }
+        $sampleHash=$this->reqJsonArr["sample_hash"];
+
+        //根据样本hash获取minio_path作为后续的key参数
+        $key=Db::table('hl_sample_put_record')->where('sample_hash',$sampleHash)->value('minio_path');
+        if(empty($key)){
+            Log::write($sampleHash.'对应的hl_sample_put_record记录的minio_path异常，为空！','sql');
+            throw new ValidateException('数据异常，请反馈给管理员');
+        }
+        try {
+            $minioClient=MinioClient::getInstance();
+            $minioConfig=config('minio');
+            // Get the object.
+            $result = $minioClient->getObject([
+                'Bucket' => $minioConfig['bucket'],
+                'Key'    => $key
+            ]);
+
+            // Display the object in the browser.
+            header("Content-Type: {$result['ContentType']}");
+            echo $result['Body'];
+        } catch (S3Exception $e) {
+            Log::write($e->getMessage(),'notice');
+            throw new ValidateException('数据异常，请反馈给管理员');
+        }
+    }
+
+    //删除已上传，却未投放的样本（只删minio的文件，至于PHP特定目录的暂存文件，通过command命令行脚本实现定时删除一批旧数据）
+    public function delSampleApk()
+    {
+        if (empty($this->reqJsonArr["sample_hash"])) {
+            throw new ValidateException('sample_hash不能为空');
+        }
+        $sampleHash = $this->reqJsonArr["sample_hash"];
+
+        try {
+            //检查样本是否存在于已投放列表
+            $isExist = Db::table('hl_sample_put_record')->where('sample_hash', $sampleHash)->count();
+            if ($isExist) {
+                throw new ValidateException('该样本已投放，不能删除！');
+            }
+
+            //查询上传日志表
+            $uploadFileInfo = Db::table('hl_upload_sample_file_log')
+                ->field('minio_bucket_name,minio_prefix,save_name')
+                ->where('sample_hash', $sampleHash)
+                ->order('id', 'desc')
+                ->find();
+
+            if (empty($uploadFileInfo)) {
+                Log::write($sampleHash . '对应的hl_upload_sample_file_log记录的minio信息异常，为空！', 'sql');
+                throw new ValidateException('数据异常，请反馈给管理员');
+            }
+        } catch (Exception $e) {
+            Log::write($e->getMessage(), 'sql');
+            throw new ValidateException('系统异常，请稍后再试');
+        }
+
+        //删除minio的文件
+        try {
+            $minioClient = MinioClient::getInstance();
+            $minioClient->deleteObject([
+                'Bucket' => $uploadFileInfo['minio_bucket_name'],
+                'Key' => $uploadFileInfo['minio_prefix'] . $uploadFileInfo['save_name'],
+            ]);
+            return response(buildSuccessResponseJson([]), 200, [], 'json');
+        } catch (S3Exception $e) {
+            Log::write($e->getMessage(), 'notice');
+            throw new ValidateException('系统异常，请稍后再试');
+        }
+    }
+}

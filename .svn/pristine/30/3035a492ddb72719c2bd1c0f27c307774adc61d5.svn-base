@@ -1,0 +1,53 @@
+{
+    "name": "hyperf/rpc-client",
+    "description": "An abstract rpc server component for Hyperf.",
+    "license": "MIT",
+    "keywords": [
+        "php",
+        "swoole",
+        "hyperf",
+        "rpc",
+        "rpc-client",
+        "json-rpc"
+    ],
+    "homepage": "https://hyperf.io",
+    "support": {
+        "docs": "https://hyperf.wiki",
+        "issues": "https://github.com/hyperf/hyperf/issues",
+        "pull-request": "https://github.com/hyperf/hyperf/pulls",
+        "source": "https://github.com/hyperf/hyperf"
+    },
+    "require": {
+        "php": ">=7.2",
+        "psr/container": "^1.0|^2.0",
+        "hyperf/rpc": "~2.2.0",
+        "hyperf/load-balancer": "~2.2.0",
+        "hyperf/utils": "~2.2.0"
+    },
+    "suggest": {
+        "hyperf/service-governance": "Required to fetch the nodes info from service governance.",
+        "hyperf/di": "For better container experience.",
+        "hyperf/pool": "Required to use connection pool."
+    },
+    "autoload": {
+        "psr-4": {
+            "Hyperf\\RpcClient\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HyperfTest\\RpcClient\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.2-dev"
+        },
+        "hyperf": {
+            "config": "Hyperf\\RpcClient\\ConfigProvider"
+        }
+    }
+}
