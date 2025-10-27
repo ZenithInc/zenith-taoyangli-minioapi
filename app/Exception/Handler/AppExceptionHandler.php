@@ -34,6 +34,7 @@ class AppExceptionHandler extends ExceptionHandler
     public function handle(Throwable $throwable, ResponseInterface $response)
     {
         $throwableMsg = sprintf('%s[%s] in %s', $throwable->getMessage(), $throwable->getLine(), $throwable->getFile()).PHP_EOL.$throwable->getTraceAsString();
+        var_dump($throwableMsg);
         $logName = requestEntry($throwable->getTrace());
         $logger = Log::get($logName);
         if ($throwable instanceof BusinessException) {
