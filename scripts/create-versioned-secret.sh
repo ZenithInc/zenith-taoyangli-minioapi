@@ -24,11 +24,11 @@ require_tools() {
 }
 
 require_change_window() {
-    local current_date current_hour
-    current_date=$(TZ=Asia/Shanghai date +%F)
+    local window_date current_hour
+    window_date=$(TZ=Asia/Shanghai date -d '3 hours ago' +%F)
     current_hour=$((10#$(TZ=Asia/Shanghai date +%H)))
-    [[ "${TAOYANGLI_CHANGE_APPROVED:-}" == "$current_date" ]] || {
-        printf 'set TAOYANGLI_CHANGE_APPROVED to today in Beijing after the user gives the start command\n' >&2
+    [[ "${TAOYANGLI_CHANGE_APPROVED:-}" == "$window_date" ]] || {
+        printf 'set TAOYANGLI_CHANGE_APPROVED to the Beijing change-window date after the user gives the start command\n' >&2
         exit 1
     }
     (( current_hour >= 22 || current_hour < 3 )) || {
