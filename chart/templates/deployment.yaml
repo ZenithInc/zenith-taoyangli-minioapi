@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tools.fullname" . }}
+  labels:
+    {{- include "tools.labels" . | nindent 4 }}
+    app.kubernetes.io/component: http
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels:
+      {{- include "tools.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: http
+  template:
+    metadata:
+      labels:
+        {{- include "tools.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: http
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: tools
+          image: {{ include "tools.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          envFrom:
+            - secretRef:
+                name: {{ include "tools.runtimeSecret" . }}
+          ports:
+            - {name: http, containerPort: 8080, protocol: TCP}
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              httpHeaders:
+                - {name: X-Taoyangli-Internal-Probe, value: "1"}
+            {{- toYaml .Values.probes.startup | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+              httpHeaders:
+                - {name: X-Taoyangli-Internal-Probe, value: "1"}
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              httpHeaders:
+                - {name: X-Taoyangli-Internal-Probe, value: "1"}
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {sizeLimit: 256Mi}

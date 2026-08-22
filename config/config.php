@@ -13,8 +13,8 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Psr\Log\LogLevel;
 
 return [
-    'app_name' => env('APP_NAME', 'skeleton'),
-    'app_env' => env('APP_ENV', 'dev'),
+    'app_name' => env('APP_NAME'),
+    'app_env' => env('APP_ENV'),
     'scan_cacheable' => env('SCAN_CACHEABLE', false),
     // 是否记录日志
     'log_enable' => env('LOG_ENABLE', false),

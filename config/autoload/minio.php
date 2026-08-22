@@ -1,12 +1,13 @@
 <?php
-return array(
-    //minio server
-    'endpoint'  =>  'https://oss.taoyangli.cn:18686',
-    'key' => '68SKkuEH6YHIWWxyt43a',
-    'secret' => 'ynQrj3pcf40L9lgORcVIJDXIAJiJj1J9x08pbnUj',
-    'bucket' => 'taoyangli',
-//    'endpoint'  =>  'https://alpha-tyfile.app.douya.wang',
-//    'key' => 'admin',
-//    'secret' => 'm20230909#',
-//    'bucket' => 'test',
-);
+
+declare(strict_types=1);
+
+return [
+    'endpoint' => env('S3_ENDPOINT'),
+    'key' => env('S3_ACCESS_KEY'),
+    'secret' => env('S3_SECRET_KEY'),
+    'bucket' => env('S3_BUCKET'),
+    'region' => env('S3_REGION'),
+    'prefix' => env('S3_PREFIX', 'ticket-file'),
+    'acl' => env('S3_ACL', 'public-read'),
+];

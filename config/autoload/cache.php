@@ -14,6 +14,6 @@ return [
         'driver' => Hyperf\Cache\Driver\RedisDriver::class,
         'packer' => Hyperf\Utils\Packer\PhpSerializerPacker::class,
         'pool' => 'cache', // 对应redis.php里的配置
-        'prefix' => 'c:'.env('APP_NAME', '').":",
+        'prefix' => 'c:'.env('APP_NAME').':',
     ],
 ];

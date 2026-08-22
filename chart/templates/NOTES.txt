@@ -1,0 +1,2 @@
+Internal Host: {{ .Values.ingress.host }}
+Public routing remains owned by the external Nginx gateway.

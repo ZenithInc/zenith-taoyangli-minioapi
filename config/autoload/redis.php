@@ -11,7 +11,7 @@ declare(strict_types=1);
  */
 return [
     'default' => [
-        'host' => env('REDIS_HOST', 'localhost'),
+        'host' => env('REDIS_HOST'),
         'auth' => env('REDIS_AUTH', null),
         'port' => (int) env('REDIS_PORT', 6379),
         'db' => (int) env('REDIS_DB', 0),
@@ -31,7 +31,7 @@ return [
     ],
     // 数据缓存
     'cache' => [
-        'host' => env('CACHE_REDIS_HOST', 'localhost'),
+        'host' => env('CACHE_REDIS_HOST'),
         'auth' => env('CACHE_REDIS_AUTH', null),
         'port' => (int) env('CACHE_REDIS_PORT', 6379),
         'db' => (int) env('CACHE_REDIS_DB', 0),
@@ -51,8 +51,8 @@ return [
     ],
     // 模型缓存用redis配置
     'model_cache' => [
-        'host' => env('MODEL_CACHE_REDIS_HOST', 'localhost'),
-        'auth' => env('MODEL_CACHE_REDIS_HOST', null),
+        'host' => env('MODEL_CACHE_REDIS_HOST'),
+        'auth' => env('MODEL_CACHE_REDIS_AUTH', null),
         'port' => (int) env('MODEL_CACHE_REDIS_PORT', 6379),
         'db' => (int) env('MODEL_CACHE_REDIS_DB', 0),
 //        'cluster' => [
