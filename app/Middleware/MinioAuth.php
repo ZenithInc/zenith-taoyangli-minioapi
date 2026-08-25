@@ -36,16 +36,20 @@ class MinioAuth implements MiddlewareInterface
         $secretToken = $this->request->header('secret-token') ?? '';
         $appId = $this->request->header('app-id') ?? '';
         if (!empty($appId) && $appId === config('client_app_id')) {
-            if (strpos($secretToken, '|')) {
-                [$sign, $timestamp] = explode('|', $secretToken);
-                if ($sign === md5(config('client_app_secret').$timestamp) && (time() - $timestamp) <= 600) {
+            if (strpos($secretToken, '|') !== false) {
+                [$sign, $timestamp] = explode('|', $secretToken, 2);
+                $timestamp = (int) $timestamp;
+                if ($timestamp > 0 && $timestamp <= time() + 60 && time() - $timestamp <= 600
+                    && hash_equals(md5(config('client_app_secret').$timestamp), $sign)) {
                     return $handler->handle($request);
                 }
             }
         } elseif (!empty($appId) && $appId === config('client_app_id_second')) {
-            if (strpos($secretToken, '|')) {
-                [$sign, $timestamp] = explode('|', $secretToken);
-                if ($sign === md5(config('client_app_secret_second').$timestamp) && (time() - $timestamp) <= 600) {
+            if (strpos($secretToken, '|') !== false) {
+                [$sign, $timestamp] = explode('|', $secretToken, 2);
+                $timestamp = (int) $timestamp;
+                if ($timestamp > 0 && $timestamp <= time() + 60 && time() - $timestamp <= 600
+                    && hash_equals(md5(config('client_app_secret_second').$timestamp), $sign)) {
                     return $handler->handle($request);
                 }
             }
