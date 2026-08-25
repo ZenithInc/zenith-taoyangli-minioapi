@@ -52,6 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         objects,
         uploads: Arc::new(Semaphore::new(2)),
         temp_dir: config.temp_dir.clone(),
+        upload_bearer_token: config.upload_bearer_token.clone(),
     };
     let listener = TcpListener::bind(config.listen).await?;
     info!(listen = %config.listen, token_mode = ?config.token_mode, "tools service started");

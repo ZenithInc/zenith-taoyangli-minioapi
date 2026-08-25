@@ -41,6 +41,7 @@ pub struct AppState {
     pub objects: Arc<dyn ObjectStore>,
     pub uploads: Arc<Semaphore>,
     pub temp_dir: std::path::PathBuf,
+    pub upload_bearer_token: String,
 }
 
 const INTERNAL_PROBE_HEADER: &str = "x-taoyangli-internal-probe";
@@ -176,8 +177,13 @@ async fn token_response(
 async fn upload(
     State(state): State<AppState>,
     Extension(request_id): Extension<RequestId>,
+    headers: HeaderMap,
     mut multipart: Multipart,
 ) -> Json<LegacyResponse> {
+    if !valid_upload_bearer(&headers, &state.upload_bearer_token) {
+        return LegacyResponse::failure(request_id.0, BAD_REQUEST_CODE, "认证失败");
+    }
+
     let permit = match state.uploads.clone().try_acquire_owned() {
         Ok(permit) => permit,
         Err(_) => {
@@ -267,6 +273,38 @@ fn internal_probe(headers: &HeaderMap) -> bool {
     headers
         .get(INTERNAL_PROBE_HEADER)
         .is_some_and(|value| value.as_bytes() == b"1")
+}
+
+fn valid_upload_bearer(headers: &HeaderMap, expected: &str) -> bool {
+    let provided = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|value| value.to_str().ok())
+        .and_then(parse_bearer_token);
+    provided
+        .map(|token| constant_time_eq(expected.as_bytes(), token.as_bytes()))
+        .unwrap_or(false)
+}
+
+fn parse_bearer_token(value: &str) -> Option<&str> {
+    let (scheme, token) = value.split_once(' ')?;
+    if !scheme.eq_ignore_ascii_case("bearer")
+        || token.is_empty()
+        || token.contains(char::is_whitespace)
+    {
+        return None;
+    }
+    Some(token)
+}
+
+fn constant_time_eq(expected: &[u8], provided: &[u8]) -> bool {
+    let maximum = expected.len().max(provided.len());
+    let mut difference = expected.len() ^ provided.len();
+    for index in 0..maximum {
+        let left = expected.get(index).copied().unwrap_or_default();
+        let right = provided.get(index).copied().unwrap_or_default();
+        difference |= usize::from(left ^ right);
+    }
+    difference == 0
 }
 
 pub fn private_ip(ip: IpAddr) -> bool {
@@ -377,6 +415,7 @@ mod tests {
             objects: Arc::new(FakeObjects),
             uploads: Arc::new(Semaphore::new(2)),
             temp_dir: std::env::temp_dir(),
+            upload_bearer_token: "fixture-upload-bearer-token-at-least-32-chars".to_owned(),
         })
     }
 
@@ -468,6 +507,10 @@ mod tests {
                         format!("multipart/form-data; boundary={boundary}"),
                     )
                     .header("qid", "upload-fixture")
+                    .header(
+                        "authorization",
+                        "Bearer fixture-upload-bearer-token-at-least-32-chars",
+                    )
                     .body(Body::from(body))
                     .unwrap(),
             )
@@ -487,6 +530,45 @@ mod tests {
                 .unwrap()
                 .ends_with("_fixture.png")
         );
+    }
+
+    #[tokio::test]
+    async fn upload_rejects_missing_or_invalid_bearer_token() {
+        for authorization in [None, Some("Bearer wrong-token"), Some("Basic wrong-token")] {
+            let boundary = "fixture-boundary";
+            let body = format!(
+                "--{boundary}\r\nContent-Disposition: form-data; name=\"upload_file\"; filename=\"fixture.png\"\r\nContent-Type: application/octet-stream\r\n\r\npng-bytes\r\n--{boundary}--\r\n"
+            );
+            let mut request = Request::post("/upload")
+                .header(
+                    "content-type",
+                    format!("multipart/form-data; boundary={boundary}"),
+                )
+                .header("qid", "unauthorized-upload-fixture");
+            if let Some(value) = authorization {
+                request = request.header("authorization", value);
+            }
+            let response = test_app()
+                .oneshot(request.body(Body::from(body)).unwrap())
+                .await
+                .unwrap();
+            let body: Value =
+                serde_json::from_slice(&response.into_body().collect().await.unwrap().to_bytes())
+                    .unwrap();
+            assert_eq!(body["return_code"], BAD_REQUEST_CODE);
+            assert_eq!(body["msg"], "认证失败");
+        }
+    }
+
+    #[test]
+    fn upload_bearer_parser_and_comparison_are_strict() {
+        assert_eq!(parse_bearer_token("Bearer token"), Some("token"));
+        assert_eq!(parse_bearer_token("bearer token"), Some("token"));
+        assert_eq!(parse_bearer_token("Bearer"), None);
+        assert_eq!(parse_bearer_token("Bearer two tokens"), None);
+        assert!(constant_time_eq(b"same-token", b"same-token"));
+        assert!(!constant_time_eq(b"same-token", b"other-token"));
+        assert!(!constant_time_eq(b"short", b"longer"));
     }
 
     #[test]

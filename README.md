@@ -34,3 +34,10 @@ $ php bin/hyperf.php start
 This will start the cli-server on port `9501`, and bind it to all network interfaces. You can then visit the site at `http://localhost:9501/`
 
 which will bring up Hyperf default home page.
+
+## Upload authentication
+
+The production Rust service requires `TOOLS_UPLOAD_BEARER_TOKEN` to contain at
+least 32 characters. Calls to `/tool/upload` must send the token in the
+`Authorization: Bearer <token>` header. Tokens in query strings are not
+accepted because query strings may be retained in gateway access logs.

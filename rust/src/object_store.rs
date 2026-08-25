@@ -63,35 +63,6 @@ impl S3ObjectStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use std::path::PathBuf;
-
-    use crate::config::{Config, TokenMode};
-
-    use super::S3ObjectStore;
-
-    #[test]
-    fn constructs_s3_client_with_an_explicit_behavior_version() {
-        let config = Config {
-            listen: "127.0.0.1:8080".parse().unwrap(),
-            app_name: "tools-test".to_owned(),
-            token_mode: TokenMode::ShadowReadonly,
-            redis_url: "redis://127.0.0.1:6379/0".to_owned(),
-            wechat_api_base_url: "https://api.weixin.qq.com".to_owned(),
-            s3_endpoint: "https://objects.example.test".to_owned(),
-            s3_region: "cn-north-1".to_owned(),
-            s3_access_key: "test-access-key".to_owned(),
-            s3_secret_key: "test-secret-key".to_owned(),
-            s3_bucket: "test-bucket".to_owned(),
-            s3_public_base_url: "https://objects.example.test/test-bucket/".to_owned(),
-            temp_dir: PathBuf::from("/tmp"),
-        };
-
-        S3ObjectStore::new(&config).expect("S3 client configuration should be valid");
-    }
-}
-
 #[async_trait]
 impl ObjectStore for S3ObjectStore {
     async fn put(
@@ -123,5 +94,35 @@ impl ObjectStore for S3ObjectStore {
             .await
             .map_err(|_| ObjectStoreError)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use crate::config::{Config, TokenMode};
+
+    use super::S3ObjectStore;
+
+    #[test]
+    fn constructs_s3_client_with_an_explicit_behavior_version() {
+        let config = Config {
+            listen: "127.0.0.1:8080".parse().unwrap(),
+            app_name: "tools-test".to_owned(),
+            token_mode: TokenMode::ShadowReadonly,
+            redis_url: "redis://127.0.0.1:6379/0".to_owned(),
+            wechat_api_base_url: "https://api.weixin.qq.com".to_owned(),
+            s3_endpoint: "https://objects.example.test".to_owned(),
+            s3_region: "cn-north-1".to_owned(),
+            s3_access_key: "test-access-key".to_owned(),
+            s3_secret_key: "test-secret-key".to_owned(),
+            s3_bucket: "test-bucket".to_owned(),
+            s3_public_base_url: "https://objects.example.test/test-bucket/".to_owned(),
+            temp_dir: PathBuf::from("/tmp"),
+            upload_bearer_token: "fixture-upload-bearer-token-at-least-32-chars".to_owned(),
+        };
+
+        S3ObjectStore::new(&config).expect("S3 client configuration should be valid");
     }
 }
