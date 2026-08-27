@@ -32,7 +32,6 @@ pub struct Config {
     pub s3_bucket: String,
     pub s3_public_base_url: String,
     pub temp_dir: PathBuf,
-    pub upload_bearer_token: String,
 }
 
 #[derive(Debug, Error)]
@@ -73,11 +72,6 @@ impl Config {
         let s3_endpoint = required("S3_ENDPOINT")?;
         url::Url::parse(&s3_endpoint).map_err(|_| ConfigError::Invalid("S3_ENDPOINT"))?;
 
-        let upload_bearer_token = required("TOOLS_UPLOAD_BEARER_TOKEN")?;
-        if upload_bearer_token.len() < 32 {
-            return Err(ConfigError::Invalid("TOOLS_UPLOAD_BEARER_TOKEN"));
-        }
-
         Ok(Self {
             listen,
             app_name: required("APP_NAME")?,
@@ -93,7 +87,6 @@ impl Config {
             temp_dir: PathBuf::from(
                 env::var("TOOLS_TMP_DIR").unwrap_or_else(|_| "/tmp".to_owned()),
             ),
-            upload_bearer_token,
         })
     }
 }

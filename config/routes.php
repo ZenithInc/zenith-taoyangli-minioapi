@@ -14,9 +14,7 @@ use App\Middleware\MinioAuth;
 
 Router::post('/wxmini/accesstoken','App\Controller\WxMiniController@getAccessToken');
 //Router::post('/upload','App\Controller\MinioController@upload');
-Router::post('/upload', 'App\Controller\MinioController@upload', [
-    'middleware' => [MinioAuth::class],
-]);
+Router::post('/upload','App\Controller\MinioController@upload');
 
 Router::post('/wx/accesstoken','App\Controller\WxController@getAccessToken');
 Router::post('/wx/jsTicket','App\Controller\WxController@getJsApiTicket');

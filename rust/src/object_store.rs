@@ -120,7 +120,6 @@ mod tests {
             s3_bucket: "test-bucket".to_owned(),
             s3_public_base_url: "https://objects.example.test/test-bucket/".to_owned(),
             temp_dir: PathBuf::from("/tmp"),
-            upload_bearer_token: "fixture-upload-bearer-token-at-least-32-chars".to_owned(),
         };
 
         S3ObjectStore::new(&config).expect("S3 client configuration should be valid");
